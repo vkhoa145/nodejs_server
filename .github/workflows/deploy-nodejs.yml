@@ -37,6 +37,7 @@ jobs:
             git clone "\$GIT_REPO" /opt/nodeapp
           else
             cd /opt/nodeapp
+            git config --global --add safe.directory /opt/nodeapp
             git fetch origin
             git reset --hard origin/main
           fi
