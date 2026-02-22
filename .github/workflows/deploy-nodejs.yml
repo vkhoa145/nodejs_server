@@ -36,6 +36,7 @@ jobs:
             sudo chown "${EC2_USER}:${EC2_USER}" /opt/nodeapp
             git clone "\$GIT_REPO" /opt/nodeapp
           else
+            sudo chown -R "${EC2_USER}:${EC2_USER}" /opt/nodeapp
             cd /opt/nodeapp
             git config --global --add safe.directory /opt/nodeapp
             git fetch origin
