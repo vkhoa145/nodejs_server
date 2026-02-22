@@ -15,16 +15,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-
-      - name: Install Ansible
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible
-
       - name: Prepare SSH key
         env:
           EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
@@ -33,19 +23,25 @@ jobs:
           echo "$EC2_SSH_PRIVATE_KEY" > ~/.ssh/khoavd.pem
           chmod 600 ~/.ssh/khoavd.pem
 
-      - name: Generate inventory
-        working-directory: intermediate/nodejs_server_deployment
+      - name: Deploy latest Node.js app to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_SSH_USER }}
         run: |
-          echo "[pet_ec2]" > inventory.ini
-          echo "pet-ec2 ansible_host=${EC2_HOST} ansible_user=${EC2_USER} ansible_ssh_private_key_file=~/.ssh/khoavd.pem" >> inventory.ini
+          GIT_REPO="https://github.com/${GITHUB_REPOSITORY}.git"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/khoavd.pem "${EC2_USER}@${EC2_HOST}" << EOF
+          set -e
+          if [ ! -d /opt/nodeapp/.git ]; then
+            sudo mkdir -p /opt/nodeapp
+            sudo chown "${EC2_USER}:${EC2_USER}" /opt/nodeapp
+            git clone "\$GIT_REPO" /opt/nodeapp
+          else
+            cd /opt/nodeapp
+            git fetch origin
+            git reset --hard origin/main
+          fi
 
-      - name: Configure EC2 (install Node.js and git)
-        working-directory: intermediate/nodejs_server_deployment
-        run: ansible-playbook configure_ec2.yml
-
-      - name: Deploy Node.js application
-        working-directory: intermediate/nodejs_server_deployment
-        run: ansible-playbook deploy_app.yml
+          cd /opt/nodeapp
+          npm install --production
+          sudo systemctl restart app
+          EOF
