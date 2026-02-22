@@ -1,6 +1,6 @@
 const http = require("http");
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 
 const server = http.createServer((req, res) => {
   if (req.method === "GET" && req.url === "/hello-world") {
@@ -16,4 +16,3 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
-
